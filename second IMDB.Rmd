@@ -90,7 +90,7 @@ review_tf_idf_bi2 %>%
   group_by(review) %>%
   slice_max(tf_idf, n = 15) %>%
   ungroup() %>%
-  ggplot(aes(tf_idf, fct_reorder(bigram, tf_idf), fill = book)) +
+  ggplot(aes(tf_idf, fct_reorder(bigram, tf_idf), fill = review)) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~review, ncol = 2, scales = "free") +
   labs(x = "tf-idf", y = NULL)
