@@ -25,3 +25,16 @@ tokens$text <- trimws(tokens$text)
 words_count <- text_cleaning_tokens %>%
   count(word, sort = TRUE)
 
+
+
+# consider trimming the reviews themselves -> 20 words per review for example
+# consider using less of the review, in action
+# or even better both.
+
+# read about what kind of a model we may be able to compute. 
+
+# find some kind of graphics to build and present
+
+# circe back to n-grams???
+
+
