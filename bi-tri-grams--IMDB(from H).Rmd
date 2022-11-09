@@ -1,0 +1,151 @@
+---
+title: "Draft Fidelity 2"
+author: "Jiun Lee"
+date: "2022-10-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(readxl)
+
+opts_chunk$set(echo = TRUE)
+```
+
+read the IMDB dataset
+
+```{r}
+imdb <- read_csv   ("IMDB Dataset.csv", 
+                    col_names = TRUE,
+                    show_col_types = FALSE)
+
+## remove sentiment column
+imdb <- imdb %>% select(-sentiment)  
+
+
+## sample down
+text_df <- imdb %>% slice_sample(n = 100, replace = FALSE)
+
+```
+
+
+#tokenizing by bigram
+
+```{r}
+library(tokenizers)
+library(tidytext)
+library(DescTools)
+
+## create bigrams
+token_bigram <- text_df %>% 
+  unnest_tokens(bigram, 
+                review, 
+                token = "ngrams", 
+                n = 2, 
+                to_lower=TRUE) %>% 
+  filter(!is.na(bigram))
+
+## create a stop word vector
+stop <-  unlist(stop_words[,1])
+
+## drop the attribute
+stop <- StripAttr(stop)
+
+## add to the stop list
+stop <- c(stop, "br")
+
+## split the bigram list into two columns
+check <-  token_bigram %>% separate(bigram, 
+                                    sep= " ", 
+                                    c("w1", "w2"))
+
+## check both words individually agains stop word lists
+a <- check$w1 %in% stop
+b <- check$w2 %in% stop
+
+## the bigram is included only if neither 
+## of the single words is a stop word
+
+remove <- (a|b)
+
+## to make it easier to see create a data frame
+d <- cbind(token_bigram, a, b, remove)
+
+## create an index of bigram
+f <- which(d$remove == FALSE)
+
+## use the index to make a list of bigrams
+g <- d$bigram[f]
+
+
+```
+
+
+
+
+```{r}
+(review_separated <- token_bigram %>%  
+  separate(bigram, into = c("word1", "word2"), sep = " ")
+)
+review_united <- review_separated %>%
+  filter(!word1 %in% c('br'),
+         !word2 %in% c('br')) %>%
+  unite(bigram, c(word1, word2), sep = " ")
+
+# freq_bigram <- token_bigram %>% count(bigram,sort = TRUE)
+
+total_bigram <- review_united %>% 
+  group_by(review) %>% 
+  summarize(total = sum(n))
+
+review_bigram <- left_join(review_united, total_bigram)
+
+rm(token_bigram, review_separated, review_united, total_bigram)
+
+#Zipf’s law states that the frequency that a word appears is inversely proportional to its rank.
+# freq_by_rank_bi <- review_bigram %>% 
+#   group_by(review) %>% 
+#   mutate(rank = row_number(), 
+#          `term frequency` = n/total) %>%
+#   ungroup()
+# 
+# #ggplot
+# freq_by_rank_bi %>% 
+#   ggplot(aes(rank, `term frequency`, color = review)) + 
+#   geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+#   scale_x_log10() +
+#   scale_y_log10()
+```
+
+#tf-idf
+```{r}
+review_tf_idf_bi <- review_bigram %>%
+  bind_tf_idf(bigram, review, n)
+
+#look at terms with high tf-idf in reviews.
+
+review_tf_idf_bi <- review_tf_idf_bi %>%
+  select(-total) %>%
+  arrange(desc(tf_idf))
+
+#too many 'br br' -> let's remove 'br br'
+
+
+# #resume tf-idf
+# review_tf_idf_bi2 <- review_united %>%
+#   bind_tf_idf(bigram, review, n)
+# 
+# review_tf_idf_bi2 
+# 
+# #look at terms with high tf-idf in reviews.
+# review_tf_idf_bi2 %>%
+#   arrange(desc(tf_idf))
+
+library(ggplot2)
+library(forcats)
+
+
+```
+
+
