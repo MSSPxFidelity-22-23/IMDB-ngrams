@@ -22,6 +22,7 @@ read the IMDB dataset
 imdb <- read_csv   ("IMDB Dataset.csv", 
                     col_names = TRUE,
                     show_col_types = FALSE)
+imdb <- unique(imdb)
 
 ## remove sentiment column
 imdb <- imdb %>% select(-sentiment)  
@@ -81,6 +82,7 @@ f <- which(d$remove == FALSE)
 ## use the index to make a list of bigrams
 g <- d$bigram[f]
 
+dfG <- filter(d, !remove)
 
 ```
 
@@ -128,13 +130,19 @@ review_united <- review_separated %>%
 
 # freq_bigram <- token_bigram %>% count(bigram,sort = TRUE)
 
-total_bigram <- review_united %>% 
-  group_by(review) %>% 
-  summarize(total = sum(n))
+bigram_count <- review_united %>%
+  count(bigram, sort = TRUE)
 
-review_bigram <- left_join(review_united, total_bigram)
+bigram_count_sans_stops <- dfG %>%
+  count(bigram, sort = TRUE)
 
-rm(token_bigram, review_separated, review_united, total_bigram)
+# total_bigram <- review_united %>% 
+#   group_by(review) %>% 
+#   summarize(total = sum(n))
+# 
+# review_bigram <- left_join(review_united, total_bigram)
+# 
+# rm(token_bigram, review_separated, review_united, total_bigram)
 
 #Zipf’s law states that the frequency that a word appears is inversely proportional to its rank.
 # freq_by_rank_bi <- review_bigram %>% 
@@ -181,4 +189,7 @@ library(forcats)
 
 ```
 
+```{r}
 
+
+```
