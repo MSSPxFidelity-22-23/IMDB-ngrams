@@ -9,7 +9,10 @@ output: html_document
 library(knitr)
 library(tidyverse)
 library(readxl)
-
+library(tokenizers)
+library(tidytext)
+library(DescTools)
+library(stringr)
 opts_chunk$set(echo = TRUE)
 ```
 
@@ -25,7 +28,7 @@ imdb <- imdb %>% select(-sentiment)
 
 
 ## sample down
-text_df <- imdb %>% slice_sample(n = 100, replace = FALSE)
+text_df <- imdb %>% slice_sample(n = 1000, replace = FALSE)
 
 ```
 
@@ -81,6 +84,22 @@ g <- d$bigram[f]
 
 ```
 
+#1 distribution of the length
+```{r}
+nwords <- function(string, pseudo=F){
+  ifelse( pseudo, 
+          pattern <- "\\S+", 
+          pattern <- "[[:alpha:]]+" 
+        )
+  str_count(string, pattern)
+}
+text_df$length <- nwords(text_df$review, pseudo = F)
+
+ggplot(data = text_df)+
+  geom_histogram(mapping=aes(x = length, y = ..density..))+
+  xlab("length of each review") +
+  ggtitle("Distribution of review lengths")
+```
 
 
 
