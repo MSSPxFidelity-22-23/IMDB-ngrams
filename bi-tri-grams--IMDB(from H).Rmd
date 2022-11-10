@@ -102,6 +102,20 @@ ggplot(data = text_df)+
 ```
 
 
+#2 punctuation frenquincy
+```{r}
+text_df$comma <- str_count(text_df$review,'\\,' )
+text_df$dot <- str_count(text_df$review,'\\.')
+text_df$question <- str_count(text_df$review, '\\?')
+text_df$exclamation <- str_count(text_df$review,'\\!')
+plot_data<- text_df %>% select('comma', 'dot','question','exclamation')
+
+ggplot(data = text_df)+
+  geom_histogram(mapping=aes(x = comma, y = ..count..),binwidth=.5)
+  
+```
+
+
 
 ```{r}
 (review_separated <- token_bigram %>%  
