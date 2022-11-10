@@ -13,6 +13,10 @@ library(tokenizers)
 library(tidytext)
 library(DescTools)
 library(stringr)
+library(tidyr)
+library(fitdistrplus)
+library(MASS)
+library(Hmisc)
 opts_chunk$set(echo = TRUE)
 ```
 
@@ -24,11 +28,12 @@ imdb <- read_csv   ("IMDB Dataset.csv",
                     show_col_types = FALSE)
 
 ## remove sentiment column
-imdb <- imdb %>% select(-sentiment)  
+imdb <- imdb[,-2]
 
 
 ## sample down
-text_df <- imdb %>% slice_sample(n = 1000, replace = FALSE)
+n_sample <- 1000
+text_df <- imdb %>% slice_sample(n = n_sample, replace = FALSE)
 
 ```
 
@@ -86,6 +91,7 @@ g <- d$bigram[f]
 
 #1 distribution of the length
 ```{r}
+set.seed(100)
 nwords <- function(string, pseudo=F){
   ifelse( pseudo, 
           pattern <- "\\S+", 
@@ -96,9 +102,17 @@ nwords <- function(string, pseudo=F){
 text_df$length <- nwords(text_df$review, pseudo = F)
 
 ggplot(data = text_df)+
-  geom_histogram(mapping=aes(x = length, y = ..density..))+
+  geom_histogram(mapping=aes(x = length, y = ..density..),binwidth=5)+
   xlab("length of each review") +
   ggtitle("Distribution of review lengths")
+
+
+
+length_dist <- fitdist(text_df$length, "pois") |>print()
+qqcomp(fitdist(text_df$length, "pois"))
+cdfcomp(fitdist(text_df$length, "pois"))
+
+
 ```
 
 
@@ -108,11 +122,22 @@ text_df$comma <- str_count(text_df$review,'\\,' )
 text_df$dot <- str_count(text_df$review,'\\.')
 text_df$question <- str_count(text_df$review, '\\?')
 text_df$exclamation <- str_count(text_df$review,'\\!')
-plot_data<- text_df %>% select('comma', 'dot','question','exclamation')
+plot_data<- text_df[,c(-1)]
 
 ggplot(data = text_df)+
   geom_histogram(mapping=aes(x = comma, y = ..count..),binwidth=.5)
   
+hist.data.frame(plot_data)
+# punc = melt(text_df[,1:2])
+# ggplot(data = punc) +
+#   geom_histogram(aes(x = value, y=(..count..)/sum(..count..), fill=variable), 
+#                  alpha=0.3, binwidth=2, position="identity")
+# # 
+# # library(reshape2)
+# # iris2 = melt(text_df[,c()])
+# # ggplot(data = iris2) +
+# #   geom_histogram(aes(x = value, y=(..count..)/sum(..count..), fill=variable), 
+# #                  alpha=0.3, binwidth=2, position="identity")
 ```
 
 
