@@ -62,7 +62,7 @@ stop <-  unlist(stop_words[,1])
 stop <- StripAttr(stop)
 
 ## add to the stop list
-stop <- c(stop, "br")
+stop <- c(stop, "br", "movie", "film", "movies")
 
 ## split the bigram list into two columns
 check <-  token_bigram %>% separate(bigram, 
