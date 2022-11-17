@@ -33,9 +33,9 @@ imdb <- imdb[,-2]
 
 
 ## sample down
-n_sample <- 1000
-text_df <- imdb %>% slice_sample(n = n_sample, replace = FALSE)
-
+imdb_df <- tibble(review = 1:49582, sentence = imdb$review)
+imdb_df <- imdb_df[1:1000,]
+text_df <- imdb_df %>% slice_sample(n = 100, replace = FALSE)
 ```
 
 
