@@ -45,7 +45,7 @@ text_df <- imdb_df %>% slice_sample(n = 100, replace = FALSE)
 library(tokenizers)
 library(tidytext)
 library(DescTools)
-
+library(textstem)
 ## create bigrams
 token_bigram <- text_df %>% 
   unnest_tokens(bigram, 
@@ -65,11 +65,16 @@ stop <- StripAttr(stop)
 ## add to the stop list
 stop <- c(stop, "br", "movie", "film", "movies")
 
-## split the bigram list into two columns
+## split the bigram list into two columns & stemming
 check <-  token_bigram %>% separate(bigram, 
                                     sep= " ", 
-                                    c("w1", "w2"))
-
+                                    c("w1", "w2"))%>%mutate(
+                                        w1 = w1%>%
+                                          lemmatize_words(),
+                                        w2 = w2%>%
+                                          lemmatize_words()
+                                    )
+token_bigram$bigram <- paste(check$w1, check$w2, sep = " ")
 ## check both words individually agains stop word lists
 a <- check$w1 %in% stop
 b <- check$w2 %in% stop
