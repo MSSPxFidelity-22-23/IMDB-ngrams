@@ -1,0 +1,177 @@
+---
+title: "Draft Fidelity 2"
+author: "Jiun Lee"
+date: "2022-10-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(readxl)
+library(tokenizers)
+library(DescTools)
+library(stringr)
+library(tidytext)
+
+opts_chunk$set(echo = TRUE)
+```
+
+read the IMDB dataset
+##Import Data
+
+```{r}
+imdb <- read_csv ("/Users/jiunlee/MSSP22/Fidelity/IMDB Dataset.csv", 
+                    col_names = TRUE,
+                    show_col_types = FALSE)
+##remove sentiment column since we don't use it.
+imdb <- imdb %>% select(-sentiment)
+##remove duplicates of review
+imdb <- unique(imdb)
+##sample down for 100reviews.
+set.seed(456)
+review_index <- 1:dim(imdb)[1] #review index
+text_df <- cbind(review_index,imdb) #column: review_index, review
+text_df <- text_df %>% slice_sample(n = 100, replace = FALSE)
+rm(review_index)
+
+```
+
+#stopwords
+```{r}
+## create a stop word vector
+stop <-  unlist(stop_words[,1])
+
+## drop the attribute
+stop <- StripAttr(stop)
+
+## add to the stop list
+stop <- c(stop, "br","character",
+"play","director","actor","actress","make","life",
+"main","bad","wrong","acting","series","cast","lot","real","top",
+"world","perform","stuff","screen","tv","dvd","role","worth","take",
+"take","guy","excellent","fan","day","bit","script","set","hard","absolutely",
+"completely","true","john","job","minutes","audience","line","pretty","read","movie","film","films", "scene", "character","story","bit","lot","bad","act","hard","awful","good","plot","people", "cinema","audience","coburn","cast","heston","jimmy", "fred","worst","sir","time",'original','direction','version','1','2','3','4','5','6','7','8','9','10','effect','version','life','le','ryan','titta','henry','woman','idea','house','bela','simply','watch','friend','girl','tom','wife','real','hot','forget','feel','wait','make','pretty','earl','kane','rose','hitchcock','success','courtenay','script','guy','michael','suzanne','amir','ha','screen')
+```
+
+#tokenizing by bigram
+```{r}
+
+## tokenizing, count the number of words within each review.
+token_bigram <- text_df %>% unnest_tokens(bigram, review, token = "ngrams", n = 2) %>% 
+  count(review_index,bigram,sort = TRUE) %>% #group_by review_index, and count bigram within each review
+ rename(count=n) #rename n to count
+
+```
+#tf-idf:bigram (without removing stopwords)
+```{r}
+tf_idf_bi_1<- token_bigram %>%
+  bind_tf_idf(bigram, review_index, count)%>%
+  arrange(desc(tf_idf))#look at terms with high tf-idf in reviews.
+##review_index numbers in tf_idf_high
+unique(tf_idf_bi_1$review_index)
+
+##tf-idf plot
+##Let's make the plots with only 6 review_index.
+tf_idf_bi_1 %>% 
+  filter(review_index %in% c(99,4237,42667,320,22732,37209)) %>%
+  arrange(desc(tf_idf)) %>%
+  group_by(review_index) %>%
+  distinct(bigram,review_index, .keep_all = TRUE) %>%
+  slice_max(tf_idf, n = 10, with_ties = FALSE) %>% 
+  ungroup() %>%
+  mutate(bigram = factor(bigram, levels = rev(unique(bigram)))) %>%
+  ggplot(aes(tf_idf, bigram, fill = review_index)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~review_index, ncol = 3, scales = "free") +
+  labs(title = "bigrams tf-idf",
+       caption = "IMDB Dataset",
+       x = "tf-idf", y = NULL)
+"
+
+## show business, science fiction : looks like meaningful bigrams. 
+##But mostly, they are having too many redundant stopwords. It's hard to recognize meaningful bigrams.
+```
+
+##remove stopwords
+```{r}
+## split the bigram list into two columns
+check <-  token_bigram %>% separate(bigram, 
+                                    sep= " ",
+                                    c("w1","w2"))
+
+## check both words individually against stop word lists
+a <- check$w1 %in% stop
+b <- check$w2 %in% stop
+# 
+# c <- grep(stop, check$w1, ignore.case = FALSE)
+# d <- grep(stop, check$w2, ignore.case = FALSE)
+
+## the bigram is included only if neither 
+## of the single words is a stop word
+
+remove <- (a|b)
+
+## to make it easier to see create a data frame
+d <- cbind(token_bigram, a,b,remove)
+
+## create an index of bigram
+f <- which(d$remove == FALSE)
+## create bigram dataset
+clean_bigram <- d %>% slice(f) %>% select(-a,-b,-remove)
+## use the index to make a list of bigrams
+# g <- d$triigram[f]
+
+#total number of bigrams in each review
+total_bigram <- clean_bigram %>% 
+  group_by(review_index) %>% 
+  summarize(total = sum(count))
+#combine it with clean_bigram
+review_bigram <- left_join(clean_bigram,total_bigram)
+
+rm(token_bigram, total_bigram,d,a,b,f,remove)
+```
+#tf-idf:bigram
+```{r}
+tf_idf_bi <- review_bigram %>%
+  bind_tf_idf(bigram, review_index, count)%>%
+  arrange(desc(tf_idf))
+
+rm(tf_idf_bi)
+
+##review_index numbers in tf_idf_bi
+unique(tf_idf_bi$review_index)
+
+##tf-idf plot
+##Let's make the plots with only 6 review_index.
+tf_idf_bi %>% 
+  filter(review_index %in% c(5140,12248,22067,11593,320)) %>%
+  arrange(desc(tf_idf)) %>%
+  group_by(review_index) %>%
+  distinct(bigram,review_index, .keep_all = TRUE) %>%
+  slice_max(tf_idf, n = 15, with_ties = FALSE) %>% 
+  ungroup() %>%
+  mutate(bigram = factor(bigram, levels = rev(unique(bigram)))) %>%
+  ggplot(aes(tf_idf, bigram, fill = review_index)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~review_index, ncol = 3, scales = 'free') +
+  labs(title = 'tf-idf bigram',
+       caption = 'IMDB Dataset',
+       x = 'tf-idf', y = NULL)
+```
+
+##join tokens back to sentence
+```{r}
+review_bigram %>% 
+  
+```
+
+
+```{r}
+
+
+```
+
+```
+
+
