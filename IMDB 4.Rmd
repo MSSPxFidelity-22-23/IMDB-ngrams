@@ -2,10 +2,13 @@
 title: "Draft Fidelity 2"
 author: "Jiun Lee"
 date: "2022-10-15"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
+
 library(knitr)
 library(tidyverse)
 library(readxl)
@@ -13,6 +16,7 @@ library(tokenizers)
 library(DescTools)
 library(stringr)
 library(tidytext)
+library(dplyr)
 
 opts_chunk$set(echo = TRUE)
 ```
@@ -46,12 +50,9 @@ stop <-  unlist(stop_words[,1])
 stop <- StripAttr(stop)
 
 ## add to the stop list
-stop <- c(stop, "br","character",
-"play","director","actor","actress","make","life",
-"main","bad","wrong","acting","series","cast","lot","real","top",
-"world","perform","stuff","screen","tv","dvd","role","worth","take",
-"take","guy","excellent","fan","day","bit","script","set","hard","absolutely",
-"completely","true","john","job","minutes","audience","line","pretty","read","movie","film","films", "scene", "character","story","bit","lot","bad","act","hard","awful","good","plot","people", "cinema","audience","coburn","cast","heston","jimmy", "fred","worst","sir","time",'original','direction','version','1','2','3','4','5','6','7','8','9','10','effect','version','life','le','ryan','titta','henry','woman','idea','house','bela','simply','watch','friend','girl','tom','wife','real','hot','forget','feel','wait','make','pretty','earl','kane','rose','hitchcock','success','courtenay','script','guy','michael','suzanne','amir','ha','screen')
+stop <- c(stop, "br","watch","friend","cast","hot","top","version",
+"play","take","excellent","wrong","read","true","actor","actress","make","life","bad","character","main","acting","series","cast","lot","real", "world","stuff","screen","tv","dvd","role","director","worth",
+"take","guy","day","bit","perform","script","set","hard","absolutely","completely","john","job","minutes","fan","audience","line","pretty","movie","film","films","scene","character","story","bit","lot","bad","act","hard","awful","good","plot","people", "cinema","audience","fred","worst","sir","time","original","direction","1","2","3","4","5","6","7","8","9","10","effect","version","life","ryan","titta","henry","woman","idea","house","bela","simply","girl","tom","wife","real","forget","feel","wait","make","pretty","earl","kane","rose","hitchcock","success","courtenay","script","guy","michael","suzanne","amir","ha","screen")
 ```
 
 #tokenizing by bigram
@@ -66,7 +67,7 @@ token_bigram <- text_df %>% unnest_tokens(bigram, review, token = "ngrams", n = 
 #tf-idf:bigram (without removing stopwords)
 ```{r}
 tf_idf_bi_1<- token_bigram %>%
-  bind_tf_idf(bigram, review_index, count)%>%
+  bind_tf_idf(bigram, review_index, count) %>%
   arrange(desc(tf_idf))#look at terms with high tf-idf in reviews.
 ##review_index numbers in tf_idf_high
 unique(tf_idf_bi_1$review_index)
@@ -96,9 +97,7 @@ tf_idf_bi_1 %>%
 ##remove stopwords
 ```{r}
 ## split the bigram list into two columns
-check <-  token_bigram %>% separate(bigram, 
-                                    sep= " ",
-                                    c("w1","w2"))
+check <-  token_bigram %>% separate(bigram, sep= " ",c("w1","w2"))
 
 ## check both words individually against stop word lists
 a <- check$w1 %in% stop
@@ -137,15 +136,13 @@ tf_idf_bi <- review_bigram %>%
   bind_tf_idf(bigram, review_index, count)%>%
   arrange(desc(tf_idf))
 
-rm(tf_idf_bi)
-
 ##review_index numbers in tf_idf_bi
 unique(tf_idf_bi$review_index)
 
 ##tf-idf plot
 ##Let's make the plots with only 6 review_index.
 tf_idf_bi %>% 
-  filter(review_index %in% c(5140,12248,22067,11593,320)) %>%
+  filter(review_index %in% c(5140,12248,22067,11593,320,13797)) %>%
   arrange(desc(tf_idf)) %>%
   group_by(review_index) %>%
   distinct(bigram,review_index, .keep_all = TRUE) %>%
@@ -162,16 +159,14 @@ tf_idf_bi %>%
 
 ##join tokens back to sentence
 ```{r}
-review_bigram %>% 
+review_bigram %>% step_unto
   
 ```
-
 
 ```{r}
 
 
 ```
 
-```
 
 
