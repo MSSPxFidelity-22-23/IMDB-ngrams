@@ -1,0 +1,123 @@
+---
+title: "Stemming"
+author: "Jiun Lee"
+date: "2022-11-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(knitr)
+library(tidyverse)
+library(readxl)
+library(tokenizers)
+library(DescTools)
+library(stringr)
+library(tidytext)
+library(dplyr)
+
+opts_chunk$set(echo = TRUE)
+```
+
+read the IMDB dataset
+##Import Data
+
+```{r}
+imdb <- read_csv ("/Users/jiunlee/MSSP22/Fidelity/IMDB Dataset.csv", 
+                    col_names = TRUE,
+                    show_col_types = FALSE)
+##remove sentiment column since we don't use it.
+imdb <- imdb %>% select(-sentiment)
+##remove duplicates of review
+imdb <- unique(imdb)
+##sample down for 100reviews.
+set.seed(456)
+review_index <- 1:dim(imdb)[1] #review index
+text_df <- cbind(review_index,imdb) #column: review_index, review
+text_df <- text_df %>% slice_sample(n = 100, replace = FALSE)
+rm(review_index)
+
+```
+
+#the most commonly-used stemming algorithm: Porter stemming
+```{r}
+library(SnowballC)
+token <- text_df %>%
+  unnest_tokens(word, review) %>%
+  anti_join(get_stopwords()) #remove stopwords
+#12367 obs after removing stopwords, but there's a pair like 'absolute' and 'absolutely'.
+
+stem_porter<- token %>%
+  mutate(stem = wordStem(word)) %>%
+  count(stem, sort = TRUE)
+#3666 obs. Stemming reduces the feature space of text data.
+
+```
+
+
+```{r}
+stemming <- token %>%
+  mutate(`Remove S` = str_remove(word, "s$"),
+         `Plural endings` = case_when(str_detect(word, "[^e|aies$]ies$") ~
+                                        str_replace(word, "ies$", "y"),
+                                      str_detect(word, "[^e|a|oes$]es$") ~
+                                        str_replace(word, "es$", "e"),
+                                      str_detect(word, "[^ss$|us$]s$") ~
+                                        str_remove(word, "s$"),
+                                      TRUE ~ word),
+         `Porter stemming` = wordStem(word)) %>%
+  rename(`Original word` = word)
+
+stemming %>%
+  gather(Type, Result, `Remove S`:`Porter stemming`) %>%
+  mutate(Type = fct_inorder(Type)) %>%
+  count(Type, Result) %>%
+  group_by(Type) %>%
+  top_n(20, n) %>%
+  ungroup() %>%
+  ggplot(aes(fct_reorder(Result, n),
+             n, fill = Type)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~Type, scales = "free_y") +
+  coord_flip() +
+  labs(x = NULL, y = "Frequency")
+
+stemming %>%
+  filter(`Remove S` != `Plural endings`) %>%
+  distinct(`Remove S`, `Plural endings`, .keep_all = TRUE)
+```
+
+#Lemmatization : doesn't work.
+```{r}
+# library(spacyr)
+# spacy_initialize(entity = FALSE)
+# 
+# token %>%
+#   mutate(doc_id = paste0("doc", row_number())) %>%
+#   select(doc_id, everything()) %>%
+#   spacy_parse() %>%
+#   anti_join(get_stopwords(), by = c("lemma" = "word")) %>%
+#   count(lemma, sort = TRUE) %>%
+#   top_n(20, n) %>%
+#   ggplot(aes(n, fct_reorder(lemma, n))) +
+#   geom_col() +
+#   labs(x = "Frequency", y = NULL)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
