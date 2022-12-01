@@ -72,11 +72,11 @@ stemming <- token %>%
                                         str_remove(word, "s$"),
                                       TRUE ~ word),
          `Porter stemming` = wordStem(word),
-         `lemmetization` = lemmatize_words(word)) %>%
+         `lemmatization` = lemmatize_words(word)) %>%
   rename(`Original word` = word)
 
 stemming %>%
-  gather(Type, Result, `Remove S`:`lemmetization`) %>%
+  gather(Type, Result, `Remove S`:`lemmatization`) %>%
   mutate(Type = fct_inorder(Type)) %>%
   count(Type, Result) %>%
   group_by(Type) %>%
