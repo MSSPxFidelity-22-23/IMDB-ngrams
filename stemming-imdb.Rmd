@@ -89,9 +89,7 @@ stemming %>%
   coord_flip() +
   labs(x = NULL, y = "Frequency")
 
-stemming %>%
-  filter(`Remove S` != `Plural endings`) %>%
-  distinct(`Remove S`, `Plural endings`, .keep_all = TRUE)
+
 ```
 
 
