@@ -52,6 +52,11 @@ stem_porter<- token %>%
   count(stem, sort = TRUE)
 #3666 obs. Stemming reduces the feature space of text data.
 
+lemme <- token %>% mutate(lemmetization = lemmatize_words(word)) %>%
+  count(lemmetization, sort = TRUE)
+#3782 obs.
+
+## They have very similar result with fewer downside.
 ```
 
 # compare stemming and lemmetization
