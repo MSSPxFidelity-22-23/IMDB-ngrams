@@ -54,8 +54,9 @@ stem_porter<- token %>%
 
 ```
 
-
+# compare stemming and lemmetization
 ```{r}
+library(textstem)
 stemming <- token %>%
   mutate(`Remove S` = str_remove(word, "s$"),
          `Plural endings` = case_when(str_detect(word, "[^e|aies$]ies$") ~
@@ -65,11 +66,12 @@ stemming <- token %>%
                                       str_detect(word, "[^ss$|us$]s$") ~
                                         str_remove(word, "s$"),
                                       TRUE ~ word),
-         `Porter stemming` = wordStem(word)) %>%
+         `Porter stemming` = wordStem(word),
+         `lemmetization` = lemmatize_words(word)) %>%
   rename(`Original word` = word)
 
 stemming %>%
-  gather(Type, Result, `Remove S`:`Porter stemming`) %>%
+  gather(Type, Result, `Remove S`:`lemmetization`) %>%
   mutate(Type = fct_inorder(Type)) %>%
   count(Type, Result) %>%
   group_by(Type) %>%
@@ -87,22 +89,6 @@ stemming %>%
   distinct(`Remove S`, `Plural endings`, .keep_all = TRUE)
 ```
 
-#Lemmatization : doesn't work.
-```{r}
-# library(spacyr)
-# spacy_initialize(entity = FALSE)
-# 
-# token %>%
-#   mutate(doc_id = paste0("doc", row_number())) %>%
-#   select(doc_id, everything()) %>%
-#   spacy_parse() %>%
-#   anti_join(get_stopwords(), by = c("lemma" = "word")) %>%
-#   count(lemma, sort = TRUE) %>%
-#   top_n(20, n) %>%
-#   ggplot(aes(n, fct_reorder(lemma, n))) +
-#   geom_col() +
-#   labs(x = "Frequency", y = NULL)
-```
 
 ```{r}
 
