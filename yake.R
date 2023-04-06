@@ -2,7 +2,7 @@ yake <- function(w, text){
 
 # get the casing
   ## function to return the number of times the word starts with a capital letter when it is not the beginning word of the sentence and the times when the word is in acronym form.
-  count_caps_and_acronyms <- function(w,text) {
+  count_caps_and_acronyms <- function(text) {
     words <- unlist(strsplit(text, "\\s+"))
     cap_count <- 0
     acronym_count <- 0
@@ -47,7 +47,7 @@ position_feature <- function(w,text) {
   })
   return(position)
 }
-  
+ position <-  position_feature(w,text)
 # get the word frequency 
   frequency_feature <- function(w, text) {
     # Tokenize the input text and create a vector of word counts
@@ -63,7 +63,7 @@ position_feature <- function(w,text) {
     
     return(frequency)
   }
-  
+ frequency <- frequency_feature(w,text)
 # get the word relatedness to context
   compute_relatedness <- function(w, text) {
     # combine all the texts into a single string
@@ -114,7 +114,7 @@ position_feature <- function(w,text) {
     
     return(relatedness)
   }
-  
+  relatedness <- compute_relatedness(w,text)
 
 # calculate Word Different Sentence
   # define the function to calculate different(w)
@@ -130,7 +130,7 @@ position_feature <- function(w,text) {
     
     return(different)
   }
-  
+  different <- different(w,text)
 # calculate the Combined Word Score
   score <- relatedness*position/(casing+frequency/relatedness+different/relatedness)
 
