@@ -207,5 +207,5 @@ return(score_list)
   }
 candidate <- subset(yake(word_list = word_list, text = text) , ks < threshold)
 
-return(candidate)
+return(candidate$word)
 }
