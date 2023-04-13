@@ -114,7 +114,7 @@ position <- position_feature(text = text, word = word)
     
     return(frequency)
   }
- frequency <- frequency_feature(w,text)
+ frequency <- frequency_feature(w = word,text = text)
 
 # 4. get the word relatedness to context
   compute_relatedness <- function(w, text) {
@@ -166,7 +166,7 @@ position <- position_feature(text = text, word = word)
     
     return(relatedness)
   }
-  relatedness <- compute_relatedness(w,text)
+  relatedness <- compute_relatedness(w = word,text = text)
 
 # 5. calculate Word Different Sentence
   # define the function to calculate different(w)
@@ -182,7 +182,7 @@ position <- position_feature(text = text, word = word)
     
     return(different)
   }
-  different <- different(w,text)
+  different <- different(w = word,text = text)
 
 # calculate the Combined Word Score
   score <- relatedness*position/(casing+frequency/relatedness+different/relatedness)
@@ -192,9 +192,12 @@ word_counts <- sapply(text, function(x) {
     word_tokens <- strsplit(x, "[^[:alnum:]_']+")
     sum(sapply(word_tokens, function(y) sum(y == w, na.rm = TRUE)))
   })
- return(w,score,word_counts)
+ return(word,score,word_counts)
 }
-score_list <- lapply(word_list, score())
+score_list <- sapply(word_list, function(word, text){
+  score(word, text)
+  })
+}
 
 
 # adding the keyword score in to the tibble
