@@ -1,6 +1,9 @@
-yake <- function(word, text){
+yake <- function(word_list, text){
 
-# get the casing
+
+# function to get the score of a single word
+score <- function(word, text){
+# 1. get the casing
   ## function to return the number of times the word starts with a capital letter when it is not the beginning word of the sentence and the times when the word is in acronym form.
   count_capital_acronym <- function(word, texts) {
     
@@ -53,7 +56,7 @@ yake <- function(word, text){
 ####
 casing <- count_capital_acronym(word = word, text = text)
   
-# get the position
+# 2. get the position
 position_feature <- function(word, text) {
   
   # Find sentence positions containing word
@@ -92,7 +95,7 @@ position_feature <- function(word, text) {
 ####
 position <- position_feature(text = text, word = word)
 
-# get the word frequency 
+# 3. get the word frequency 
   frequency_feature <- function(w, text) {
     # Tokenize the input text and create a vector of word counts
     word_counts <- sapply(text, function(x) {
@@ -108,7 +111,8 @@ position <- position_feature(text = text, word = word)
     return(frequency)
   }
  frequency <- frequency_feature(w,text)
-# get the word relatedness to context
+
+# 4. get the word relatedness to context
   compute_relatedness <- function(w, text) {
     # combine all the texts into a single string
     text_list <- paste(text, collapse = " ")
@@ -160,7 +164,7 @@ position <- position_feature(text = text, word = word)
   }
   relatedness <- compute_relatedness(w,text)
 
-# calculate Word Different Sentence
+# 5. calculate Word Different Sentence
   # define the function to calculate different(w)
   different <- function(w, text) {
     # count the total number of sentences in the text
@@ -175,9 +179,23 @@ position <- position_feature(text = text, word = word)
     return(different)
   }
   different <- different(w,text)
+
 # calculate the Combined Word Score
   score <- relatedness*position/(casing+frequency/relatedness+different/relatedness)
 
+  # count of the word
+word_counts <- sapply(text, function(x) {
+    word_tokens <- strsplit(x, "[^[:alnum:]_']+")
+    sum(sapply(word_tokens, function(y) sum(y == w, na.rm = TRUE)))
+  })
+ return(w,score,word_counts)
+}
+score_list <- lapply(word_list, score())
 
- return(w,score)
+
+# adding the keyword score in to the tibble
+score_list <- score_list %<% mutate(
+  ks = prod(score_list$score)/(1 + sum(score_list$score)*word_counts)
+)
+return(score_list)
 }
