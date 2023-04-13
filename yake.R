@@ -1,3 +1,7 @@
+
+kwselect <- function(word_list, text, threshold){
+
+
 yake <- function(word_list, text){
 
 
@@ -198,4 +202,8 @@ score_list <- score_list %<% mutate(
   ks = prod(score_list$score)/(1 + sum(score_list$score)*word_counts)
 )
 return(score_list)
+  }
+candidate <- subset(yake(word_list = word_list, text = text) , ks < threshold)
+
+return(candidate)
 }
