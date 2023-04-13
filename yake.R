@@ -197,7 +197,6 @@ word_counts <- sapply(text, function(x) {
 score_list <- sapply(word_list, function(word, text){
   score(word, text)
   })
-}
 
 
 # adding the keyword score in to the tibble
