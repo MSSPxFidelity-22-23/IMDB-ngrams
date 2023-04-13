@@ -51,7 +51,7 @@ yake <- function(word, text){
 ####
 # count_capital_acronym(word = 'cat cat', text = c('Cat Cat Cat', 'cat dog dog','cat CAT CAT'))
 ####
-score <- count_capital_acronym(word = word, text = text)
+casing <- count_capital_acronym(word = word, text = text)
   
 # get the position
 position_feature <- function(word, text) {
