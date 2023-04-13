@@ -44,9 +44,9 @@ yake <- function(word, text){
     
     # Calculate the final score
     max_count <- max(count_capital, count_acronym)
-    score <- max_count / 1 + log(total_count)
+    casing <- max_count / 1 + log(total_count)
     
-    return(score)
+    return(casing)
   }
 ####
 # count_capital_acronym(word = 'cat cat', text = c('Cat Cat Cat', 'cat dog dog','cat CAT CAT'))
@@ -76,19 +76,19 @@ position_feature <- function(word, text) {
   }
   
   # Calculate position feature
-  if (length(sen) > 0) {
-    pos <- log(log(3 + median(sen)))
-  } else {
-    pos <- 0
-  }
-  
-  return(pos)
+  # if (length(sen) > 0) {
+  #   pos <- log(log(3 + median(sen)))
+  # } else {
+  #   pos <- 0
+  # }
+  pos <- log(log(3 + median(sen)))
+  return(sen)
 }
 
 
 
 ####
- position_feature(word = 'cat', text = c( 'cat cat cat.','cat dog dog.'))
+ position_feature(word = 'cat', text = 'dog cat dog.')
 ####
 position <- position_feature(text = text, word = word)
 
