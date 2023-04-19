@@ -195,10 +195,11 @@ frequency_feature <- function(word, text) {
 }
 
 ## testing
-score(word = "cat cat", text = c('cat cat Cat CAT', 'cat dog dog dog','CAT CAT cat cat'))
+# score(word = "cat cat", text = c('cat cat Cat CAT', 'cat dog dog dog','CAT CAT cat cat'))
 # word_list = c("cat cat", "dog dog")
 
 # Apply the score function to each word in the word list
+# word_list = c("cat cat", "dog dog", "pig pig")
 results_list <- lapply(word_list, score, text=text)
 
 # Combine the resulting tibbles into a single data frame
@@ -206,8 +207,10 @@ score_list <- do.call(rbind, results_list)
 
 
 # adding the keyword score in to the tibble
+prod <- prod(na.omit(score_list$score))
+sum <- sum(na.omit(score_list$score))
 score_list <- score_list %>% mutate(
-  ks = prod(score_list$score)/(1 + sum(score_list$score)*total_counts)
+  ks = prod/(1 + sum*total_counts)
 )
 return(score_list)
 }
@@ -215,6 +218,7 @@ return(score_list)
 #### testing
 # yake(word_list = c("cat cat", "dog dog"), text = c("cat cat dog dog", 'cat dog dog cat', 'dog cat cat dog'))
 ####
+# candidate <- yake(word_list = word_list, text = text)
 candidate <- subset(yake(word_list = word_list, text = text) , ks < threshold)
 
 return(data.frame(candidate$word, candidate$ks))
@@ -222,4 +226,4 @@ return(data.frame(candidate$word, candidate$ks))
 
 
 ## testing
-kwselect(word_list = c("cat cat", "dog dog"), text = c("cat cat dog dog", 'cat dog dog cat', 'dog cat cat dog'), threshold = .2)
+kwselect(word_list = c('cat cat',"cat dog"), text = c("cat cat dog dog", 'cat dog dog cat', 'dog cat cat dog'), threshold = 1)
