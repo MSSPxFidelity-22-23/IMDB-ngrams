@@ -1,7 +1,10 @@
 
 kwselect <- function(word_list, text, threshold){
-
-
+  library(stringr)
+  library(tokenizers)
+  library(tibble)
+  library(tidyverse)
+  
 yake <- function(word_list, text){
 
 
@@ -58,154 +61,165 @@ score <- function(word, text){
 ####
 # count_capital_acronym(word = 'cat cat', text = c('Cat Cat Cat', 'cat dog dog','cat CAT CAT'))
 ####
+  
+
 casing <- count_capital_acronym(word = word, text = text)
   
 # 2. get the position
 position_feature <- function(word, text) {
   
-  # Find sentence positions containing word
-  sen <- numeric()
-  for (i in seq_along(text)) {
-    sentences <- strsplit(text[i], "\\.\\s*")[[1]]
-    for (j in seq_along(sentences)) {
-      words <- strsplit(sentences[j], "\\s+")[[1]]
-      if (length(words) > 1) {
-        bigrams <- paste(words[-length(words)], words[-1], sep = " ")
-        if (word %in% bigrams) {
-          sen <- c(sen, j)
-        }
-      } else {
-        if (word == words) {
-          sen <- c(sen, j)
-        }
-      }
-    }
-  }
+  # Split the text into sentences
+  sentences <- strsplit(text, "[.?!]")[[1]]
   
-  # Calculate position feature
-  # if (length(sen) > 0) {
-  #   pos <- log(log(3 + median(sen)))
-  # } else {
-  #   pos <- 0
-  # }
-  pos <- log(log(3 + median(sen)))
-  return(sen)
+  # Find the positions of the bigram 'word' in the sentences
+  sen_w <- lapply(sentences, function(s) {
+    which(str_detect(s, paste0("\\b", word, "\\b")))
+  })
+  
+  # Flatten the list of sentence positions into a single vector
+  sen_w <- unlist(sen_w)
+  
+  # Calculate the median position of the bigram 'word' in the sentences
+  median_pos <- median(sen_w)
+  
+  # Calculate the position feature of the bigram 'word'
+  position_w <- log(log(3 + median_pos))
+  
+  return(position_w)
 }
 
 
 
+
 ####
- position_feature(word = 'cat', text = 'dog cat dog.')
+ # position_feature(word = 'cat cat', text = c('cat cat Cat', 'cat dog dog','CAT cat cat'))
 ####
-position <- position_feature(text = text, word = word)
+position <- position_feature(word = word, text = text)
 
 # 3. get the word frequency 
-  frequency_feature <- function(w, text) {
-    # Tokenize the input text and create a vector of word counts
-    word_counts <- sapply(text, function(x) {
-      word_tokens <- strsplit(x, "[^[:alnum:]_']+")
-      sum(sapply(word_tokens, function(y) sum(y == w, na.rm = TRUE)))
-    })
-    
-    # Compute the frequency of the word and normalize by 1-standard deviation from the mean
-    frequency <- sapply(word_counts, function(x) {
-      x / (mean(word_counts) + sd(word_counts))
-    })
-    
-    return(frequency)
-  }
+frequency_feature <- function(word, text) {
+  
+  # Calculate the frequency of the bigram 'word' in the text
+  freq_w <- sum(str_count(text, paste0("\\b", word, "\\b")))
+  
+  # Split the text into individual words
+  words <- str_split(text, "\\s+")[[1]]
+  
+  # Calculate the mean and standard deviation of word counts
+  mean_count <- mean(table(words))
+  sd_count <- sd(table(words))
+  
+  # Calculate the frequency feature of the bigram 'word'
+  frequency_w <- freq_w / (mean_count + sd_count)
+  
+  return(frequency_w)
+}
+####
+  # frequency_feature(word = 'cat cat', text = c('cat cat Cat', 'cat dog dog','CAT cat cat'))
+####
  frequency <- frequency_feature(w = word,text = text)
 
 # 4. get the word relatedness to context
-  compute_relatedness <- function(w, text) {
-    # combine all the texts into a single string
-    text_list <- paste(text, collapse = " ")
-    
-    # calculate the frequency count for each word and bigram
-    counts <- table(unlist(strsplit(text_list, "\\s+")))
-    bigram_counts <- table(textsquad::ngrams(text, 2))
-    
-    # calculate the total number of words and bigrams
-    total_words <- sum(counts)
-    total_bigrams <- sum(bigram_counts)
-    
-    # calculate the number of unique words and bigrams on the left and right of w
-    w_words <- unlist(strsplit(w, "\\s+"))
-    left_words <- unlist(strsplit(substr(text_list, 1, regexpr(w_words[1], text_list) - 1), "\\s+"))
-    right_words <- unlist(strsplit(substr(text_list, regexpr(w_words[length(w_words)], text_list) + nchar(w_words[length(w_words)])), "\\s+"))
-    
-    left_bigrams <- NULL
-    right_bigrams <- NULL
-    
-    if(length(w_words) == 1) {
-      left_bigrams <- unlist(strsplit(substr(text_list, 1, regexpr(w_words[1], text_list) - 1), "(?<=\\S{2})\\s+(?=\\S{2})"))
-      right_bigrams <- unlist(strsplit(substr(text_list, regexpr(w_words[length(w_words)], text_list) + nchar(w_words[length(w_words)])), "(?<=\\S{2})\\s+(?=\\S{2})"))
-    } else if(length(w_words) == 2) {
-      left_bigrams <- unlist(strsplit(substr(text_list, 1, regexpr(w, text_list) - 1), "(?<=\\S{2})\\s+(?=\\S{2})"))
-      right_bigrams <- unlist(strsplit(substr(text_list, regexpr(w, text_list) + nchar(w)), "(?<=\\S{2})\\s+(?=\\S{2})"))
-    }
-    
-    unique_left_words <- length(unique(left_words))
-    unique_right_words <- length(unique(right_words))
-    unique_left_bigrams <- length(unique(left_bigrams))
-    unique_right_bigrams <- length(unique(right_bigrams))
-    
-    # calculate the count of w
-    w_count <- ifelse(length(w_words) == 1, counts[w_words], bigram_counts[w])
-    
-    # calculate the maximum count of any word or bigram
-    max_count <- ifelse(length(w_words) == 1, max(counts), max(bigram_counts))
-    
-    # calculate the relatedness score
-    WR <- (unique_right_words + unique_right_bigrams) / (total_words + total_bigrams - w_count)
-    WL <- (unique_left_words + unique_left_bigrams) / (total_words + total_bigrams - w_count)
-    PL <- (total_words + total_bigrams - w_count) / max_count
-    PR <- (total_words + total_bigrams - w_count) / max_count
-    
-    relatedness <- 1 + (WR + WL) * w_count / max_count + PL + PR
-    
-    return(relatedness)
-  }
-  relatedness <- compute_relatedness(w = word,text = text)
+ relatedness <- function(word, text){
+   # split text into words
+   words <- unlist(strsplit(tolower(paste(text, collapse = " ")), "\\W+"))
+   
+   # create bigrams
+   bigrams <- paste(words[-length(words)], words[-1], sep = " ")
+   
+   # count occurrences of each bigram
+   counts <- table(bigrams)
+   
+   # check if the word is present in the bigrams
+   if (!(word %in% bigrams)) {
+     return(0)
+   }
+   
+   # compute WR, WL, PL, PR
+   right_words <- words[which(bigrams == word) + 1]
+   left_words <- words[which(bigrams == word) - 1]
+   WR <- length(unique(right_words)) / length(right_words)
+   WL <- length(unique(left_words)) / length(left_words)
+   PL <- length(left_words) / max(counts)
+   PR <- length(right_words) / max(counts)
+   
+   # compute relatedness
+   max_count <- max(counts)
+   w_count <- counts[word]
+   rel <- 1 + (WR + WL) * w_count / max_count + PL + PR
+   
+   return(as.numeric(rel))
+ }
+ 
+ 
+ 
+ 
+ ####
+ # relatedness(word = 'cat cat', text = c('cat cat Cat CAT', 'cat dog dog dog','CAT CAT cat cat'))
+ ####
+  relatedness <- relatedness(word = word,text = text)
 
 # 5. calculate Word Different Sentence
   # define the function to calculate different(w)
-  different <- function(w, text) {
-    # count the total number of sentences in the text
-    total_sentences <- sum(unlist(lapply(text, function(x) str_count(x, "[.?!]"))))
+  different <- function(word, text) {
+    # Split the text into sentences
+    sentences <- unlist(strsplit(text, "[.!?]"))
     
-    # count the number of sentences that contain the word/bigram w
-    num_sentences <- sum(unlist(lapply(text, function(x) str_detect(x, regex(w, ignore_case = TRUE)))))
+    # Count the number of sentences that contain the word
+    num_sentences <- sum(sapply(sentences, function(s) grepl(paste0("\\b", word, "\\b"), s)))
     
-    # calculate the different(w) metric
-    different <- num_sentences / total_sentences
+    # Calculate the different score
+    different_score <- num_sentences / length(sentences)
     
-    return(different)
+    return(different_score)
   }
-  different <- different(w = word,text = text)
+  
+  
+  ####
+  # different(word = 'cat cat', text = c('cat cat Cat CAT', 'cat dog dog dog','CAT CAT cat cat'))
+  ####
+  different <- different(word = word,text = text)
 
 # calculate the Combined Word Score
   score <- relatedness*position/(casing+frequency/relatedness+different/relatedness)
 
   # count of the word
-word_counts <- sapply(text, function(x) {
-    word_tokens <- strsplit(x, "[^[:alnum:]_']+")
-    sum(sapply(word_tokens, function(y) sum(y == w, na.rm = TRUE)))
-  })
- return(word,score,word_counts)
+
+  
+  count_bigram <- function(word, text) {
+    bigrams <- unlist(tokenize_ngrams(text, n = 2))
+    sum(bigrams == word)
+  }
+  total_counts <- count_bigram(word = word,text = text)
+ return(tibble(word,score,total_counts))
 }
-score_list <- sapply(word_list, function(word, text){
-  score(word, text)
-  })
+
+## testing
+score(word = "cat cat", text = c('cat cat Cat CAT', 'cat dog dog dog','CAT CAT cat cat'))
+# word_list = c("cat cat", "dog dog")
+
+# Apply the score function to each word in the word list
+results_list <- lapply(word_list, score, text=text)
+
+# Combine the resulting tibbles into a single data frame
+score_list <- do.call(rbind, results_list)
 
 
 # adding the keyword score in to the tibble
-score_list <- score_list %<% mutate(
-  ks = prod(score_list$score)/(1 + sum(score_list$score)*word_counts)
+score_list <- score_list %>% mutate(
+  ks = prod(score_list$score)/(1 + sum(score_list$score)*total_counts)
 )
 return(score_list)
-  }
+}
+
+#### testing
+# yake(word_list = c("cat cat", "dog dog"), text = c("cat cat dog dog", 'cat dog dog cat', 'dog cat cat dog'))
+####
 candidate <- subset(yake(word_list = word_list, text = text) , ks < threshold)
 
-return(candidate$word)
+return(data.frame(candidate$word, candidate$ks))
 }
+
+
+## testing
+kwselect(word_list = c("cat cat", "dog dog"), text = c("cat cat dog dog", 'cat dog dog cat', 'dog cat cat dog'), threshold = .1)
