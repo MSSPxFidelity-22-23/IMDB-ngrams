@@ -222,4 +222,4 @@ return(data.frame(candidate$word, candidate$ks))
 
 
 ## testing
-kwselect(word_list = c("cat cat", "dog dog"), text = c("cat cat dog dog", 'cat dog dog cat', 'dog cat cat dog'), threshold = .1)
+kwselect(word_list = c("cat cat", "dog dog"), text = c("cat cat dog dog", 'cat dog dog cat', 'dog cat cat dog'), threshold = .2)
